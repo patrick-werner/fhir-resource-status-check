@@ -1,6 +1,9 @@
 name: 'Validate FHIR Resource Status'
 description: 'Recursively validates that FHIR JSON files (if a status field is present) have status "active" or "retired".'
 author: 'Patrick Werner <pa.f.werner@gmail.com>'
+branding:
+  icon: 'check-circle'   # Use the built-in check-circle icon
+  color: 'blue' 
 inputs:
   folder:
     description: 'Path to the folder containing FHIR files'
