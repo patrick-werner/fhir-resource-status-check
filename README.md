@@ -11,7 +11,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Validate FHIR Files
         uses: patrick-werner/validate-fhir-resource-status@1.0.0
         with:
