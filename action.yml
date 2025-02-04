@@ -1,0 +1,35 @@
+name: 'Validate FHIR Resource Status'
+description: 'Recursively validates that FHIR JSON files (if a status field is present) have status "active" or "retired".'
+author: 'Patrick Werner <pa.f.werner@gmail.com>'
+inputs:
+  folder:
+    description: 'Path to the folder containing FHIR files'
+    required: true
+    default: './Resources/fsh-generated/resources'
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Validate FHIR Resource Statuses
+      shell: bash
+      run: |
+        FOLDER="${{ inputs.folder }}"
+        echo "Scanning folder: ${FOLDER}"
+        exit_code=0
+
+        # Recursively find all .json files in the specified folder.
+        while IFS= read -r -d '' file; do
+          echo "Checking file: ${file}"
+          # Extract the top-level "status" field; if missing, status will be empty.
+          status=$(jq -r '.status // empty' "${file}")
+
+          # If the status exists and is not "active" or "retired", report an error.
+          if [ -n "$status" ] && [ "$status" != "active" ] && [ "$status" != "retired" ]; then
+            echo "Error: ${file} has status '${status}' (expected 'active' or 'retired')"
+            exit_code=1
+          fi
+        done < <(find "${FOLDER}" -type f -name '*.json' -print0)
+
+        exit $exit_code
