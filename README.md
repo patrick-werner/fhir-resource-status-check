@@ -13,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Validate FHIR Files
-        uses: patrick-werner/validate-fhir-resource-status@v1.0.0
+        uses: patrick-werner/validate-fhir-resource-status@1.0.0
         with:
           folder: './path/to/fhir-files'
