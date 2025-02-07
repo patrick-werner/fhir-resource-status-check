@@ -2,7 +2,7 @@ name: 'Validate FHIR Resource Status'
 description: 'Recursively validates that FHIR JSON files (if a status field is present) have status "active" or "retired".'
 author: 'Patrick Werner <pa.f.werner@gmail.com>'
 branding:
-  icon: 'check-circle'   # Use the built-in check-circle icon
+  icon: 'check-circle'
   color: 'blue' 
 inputs:
   folder:
@@ -21,6 +21,7 @@ runs:
         FOLDER="${{ inputs.folder }}"
         echo "Scanning folder: ${FOLDER}"
         exit_code=0
+        invalid_files=()
 
         # Recursively find all .json files in the specified folder.
         while IFS= read -r -d '' file; do
@@ -31,8 +32,19 @@ runs:
           # If the status exists and is not "active" or "retired", report an error.
           if [ -n "$status" ] && [ "$status" != "active" ] && [ "$status" != "retired" ]; then
             echo "Error: ${file} has status '${status}' (expected 'active' or 'retired')"
+            invalid_files+=("${file}")
             exit_code=1
           fi
         done < <(find "${FOLDER}" -type f -name '*.json' -print0)
+
+        # Print summary of invalid files
+        if [ ${#invalid_files[@]} -ne 0 ]; then
+          echo "Summary of invalid files:"
+          for invalid_file in "${invalid_files[@]}"; do
+            echo "${invalid_file}"
+          done
+        else
+          echo "No invalid files found."
+        fi
 
         exit $exit_code
