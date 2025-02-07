@@ -3,7 +3,7 @@ description: 'Recursively validates that FHIR JSON files (if a status field is p
 author: 'Patrick Werner <pa.f.werner@gmail.com>'
 branding:
   icon: 'check-circle'
-  color: 'blue' 
+  color: 'blue'
 inputs:
   folder:
     description: 'Path to the folder containing FHIR files'
@@ -23,10 +23,42 @@ runs:
         exit_code=0
         invalid_files=()
 
+        # Define a list of definitional resource types.
+        DEFINITIONS=(
+          "StructureDefinition"
+          "ValueSet"
+          "CodeSystem"
+          "ConceptMap"
+          "OperationDefinition"
+          "SearchParameter"
+          "NamingSystem"
+          "StructureMap"
+          "GraphDefinition"
+          "ImplementationGuide"
+        )
+
         # Recursively find all .json files in the specified folder.
         while IFS= read -r -d '' file; do
           echo "Checking file: ${file}"
-          # Extract the top-level "status" field; if missing, status will be empty.
+
+          # Extract the resourceType (e.g. Observation, StructureDefinition, etc.)
+          resourceType=$(jq -r '.resourceType // empty' "${file}")
+        
+          # If the resource type is not in the list of definitional resources, skip it.
+          skip_resource=true
+          for def in "${DEFINITIONS[@]}"; do
+            if [ "$resourceType" = "$def" ]; then
+              skip_resource=false
+              break
+            fi
+          done
+
+          if [ "$skip_resource" = true ]; then
+            echo "Skipping file: ${file} (resourceType: ${resourceType})"
+            continue
+          fi
+
+          # Extract the top-level "status" field (if any).
           status=$(jq -r '.status // empty' "${file}")
 
           # If the status exists and is not "active" or "retired", report an error.
@@ -37,7 +69,7 @@ runs:
           fi
         done < <(find "${FOLDER}" -type f -name '*.json' -print0)
 
-        # Print summary of invalid files
+        # Print summary of invalid files.
         if [ ${#invalid_files[@]} -ne 0 ]; then
           echo "Summary of invalid files:"
           for invalid_file in "${invalid_files[@]}"; do
