@@ -22,6 +22,7 @@ runs:
         echo "Scanning folder: ${FOLDER}"
         exit_code=0
         invalid_files=()
+        invalid_statuses=()
 
         # Define a list of definitional resource types.
         DEFINITIONS=(
@@ -65,18 +66,20 @@ runs:
           if [ -n "$status" ] && [ "$status" != "active" ] && [ "$status" != "retired" ]; then
             echo "Error: ${file} has status '${status}' (expected 'active' or 'retired')"
             invalid_files+=("${file}")
+            invalid_statuses+=("${status}")
             exit_code=1
           fi
         done < <(find "${FOLDER}" -type f -name '*.json' -print0)
 
         # Print summary of invalid files.
         if [ ${#invalid_files[@]} -ne 0 ]; then
-          echo "Summary of invalid files:"
-          for invalid_file in "${invalid_files[@]}"; do
-            echo "${invalid_file}"
+          echo "Validation failed: ${#invalid_files[@]} file(s) have an invalid FHIR status."
+          echo "Allowed values are 'active' and 'retired':"
+          for i in "${!invalid_files[@]}"; do
+            echo "  - ${invalid_files[$i]} (status: '${invalid_statuses[$i]}')"
           done
         else
-          echo "No invalid files found."
+          echo "Validation successful: no invalid FHIR status values found."
         fi
 
         exit $exit_code
